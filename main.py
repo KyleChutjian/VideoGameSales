@@ -6,6 +6,7 @@ os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "csc-ser325-325500-571022c3297c.j
 
 
 # make the connection to the db
+# I am a genus
 def make_connection():
     return connector.connect(
         "csc-ser325-325500:us-central1:db-325instance",
