@@ -1,15 +1,14 @@
 from google.cloud.sql.connector import connector
 import json
 import os
+import csv
 
-f = open('credentials.json')
+# Reading Credentials JSON File
+f = open('Data/credentials.json')
 credentials = json.load(f)
-print(credentials["password"])
-
-
+f.close()
 
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = credentials["GOOGLE_APPLICATION_CREDENTIALS"]
-
 
 # make the connection to the db
 def make_connection():
@@ -21,81 +20,94 @@ def make_connection():
         database=None
     )
 
-
 def setup_db(cur):
     # Set up db
-    cur.execute('CREATE DATABASE IF NOT EXISTS roster_db')
-    cur.execute('USE roster_db')
+    cur.execute('CREATE DATABASE IF NOT EXISTS vgsales')
+    cur.execute('USE vgsales')
 
-    cur.execute('DROP TABLE IF EXISTS Course;')
-    cur.execute('DROP TABLE IF EXISTS User;')
-    cur.execute('DROP TABLE IF EXISTS Member;')
+    cur.execute('DROP TABLE IF EXISTS Game;')
+    cur.execute('DROP TABLE IF EXISTS Genre;')
+    cur.execute('DROP TABLE IF EXISTS Publisher;')
+    cur.execute('DROP TABLE IF EXISTS Platform;')
 
     cur.execute('''
-        CREATE TABLE User (
-        id     INT NOT NULL PRIMARY KEY AUTO_INCREMENT,
-            name   VARCHAR(20) UNIQUE);
-        ''');
+        CREATE TABLE Genre (
+            genre_id INT NOT NULL PRIMARY KEY AUTO_INCREMENT,
+            genre_name VARCHAR(50) NOT NULL)
+    ''')
 
-    cur.execute('''CREATE TABLE Course (
-            id     INT NOT NULL PRIMARY KEY AUTO_INCREMENT,
-            title  VARCHAR(20) UNIQUE);
-        ''');
+    cur.execute('''
+        CREATE TABLE Publisher (
+            publisher_id INT NOT NULL PRIMARY KEY AUTO_INCREMENT,
+            publisher_name VARCHAR(50) NOT NULL)
+    ''')
 
-    cur.execute('''CREATE TABLE Member (
-            user_id     INT,
-            course_id   INT,
-            role        INT,
-            FOREIGN KEY(user_id) REFERENCES User(id),
-            FOREIGN KEY(course_id) REFERENCES Course(id),
-            PRIMARY KEY (user_id, course_id)
-        );
-        ''')
+    cur.execute('''
+        CREATE TABLE Platform (
+            platform_id INT NOT NULL PRIMARY KEY AUTO_INCREMENT,
+            platform_name VARCHAR(50) NOT NULL)
+    ''')
 
+    cur.execute('''
+        CREATE TABLE Game (
+            rank INT NOT NULL,
+            name VARCHAR(50) NOT NULL,
+            platform_id INT NOT NULL,
+            year INT NOT NULL,
+            genre_id INT NOT NULL,
+            publisher_id INT NOT NULL,
+            na_sales INT NOT NULL,
+            eu_sales INT NOT NULL,
+            jp_sales INT NOT NULL,
+            other_sales INT NOT NULL,
+            global_sales INT NOT NULL,
+            FOREIGN KEY(genre_id) REFERENCES Genre(genre_id),
+            FOREIGN KEY(publisher_id) REFERENCES Publisher(publisher_id),
+            FOREIGN KEY(platform_id) REFERENCES Platform(platform_id),
+            PRIMARY KEY(rank)
+            )
+    ''')
 
 def insert_data(cur):
-    cur.execute('USE roster_db')
+    cur.execute('USE vgsales')
 
-    fname = 'roster_data.json'
 
-    # Data structure as follows:
-    #   [
-    #   [ "Charley", "si110", 1 ],
-    #   [ "Mea", "si110", 0 ],
+    # Reading from CSV File
+    rows = []
+    file = open('sample.csv', encoding='utf-8-sig')
+    csvreader = csv.reader(file)
+    header = next(csvreader)
 
-    # open the file and read
-    str_data = open(fname).read()
-    # load the data in a json object
-    json_data = json.loads(str_data)
+    for row in csvreader:
+        rows.append(row)
+        cur.execute('''INSERT IGNORE INTO Platform (platform_name)
+            VALUES ( %s )''', (row[2]))
 
-    # json data is loaded in a pyton list
-    for entry in json_data:
-        name = entry[0]
-        title = entry[1]
+        cur.execute('''INSERT IGNORE INTO Genre (genre_name)
+            VALUES ( %s )''', (row[4]))
 
-        print(name)
-        print(title)
+        cur.execute('''INSERT IGNORE INTO Publisher (publisher_name)
+            VALUES ( %s )''', (row[5]))
 
-        # INSERT OR IGNORE satisfies the uniqueness constraint. the inserted data will be ignored if we try to add duplicates.
-        # works as both insert and update
-        cur.execute('''INSERT IGNORE INTO User (name)
-            VALUES ( %s )''', (name))
+        cur.execute('SELECT platform_id FROM Platform WHERE platform_name = %s ', (row[2],))
+        platform_id = cur.fetchone()[0]
 
-        # look up the primary key from inserted data.
-        cur.execute('SELECT id FROM User WHERE name = %s ', (name,))
-        user_id = cur.fetchone()[0]
+        cur.execute('SELECT genre_id FROM Genre WHERE genre_name = %s ', (row[4],))
+        genre_id = cur.fetchone()[0]
 
-        # same technique is used to insert the title
-        cur.execute('''INSERT IGNORE INTO Course (title)
-            VALUES ( %s )''', (title,))
-        cur.execute('SELECT id FROM Course WHERE title = %s ', (title,))
-        course_id = cur.fetchone()[0]
+        cur.execute('SELECT publisher_id FROM Publisher WHERE publisher_name = %s ', (row[5],))
+        publisher_id = cur.fetchone()[0]
 
-        # insert both keys in the many to many connector table.
-        cur.execute('''INSERT IGNORE INTO Member
-            (user_id, course_id) VALUES ( %s, %s )''',
-                    (user_id, course_id))
 
+        cur.execute('''INSERT IGNORE INTO Game
+            (Rank, Name, platform_id, Year, genre_id, publisher_id, NA_Sales, EU_Sales, JP_Sales, Other_Sales, Global_Sales)
+            
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)''',
+                    (row[0], row[1], platform_id, row[3], genre_id, publisher_id, row[6], row[7], row[8], row[9], row[10]))
+    file.close()
+
+    print(header)
+    print(rows[0])
 
 cnx = make_connection()
 cur = cnx.cursor()

@@ -1,4 +1,5 @@
 venv/
 credentials.json
 /.idea/
-csc-ser325-325500-571022c3297c.json
+/Data/csc-ser325-325500-571022c3297c.json
+/Data/credentials.json
