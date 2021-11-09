@@ -3,6 +3,9 @@ import json
 import os
 import csv
 
+# Written by Kyle Chutjian and Thomas Eckert
+
+
 # Reading Credentials JSON File
 f = open('Data/credentials.json')
 credentials = json.load(f)
