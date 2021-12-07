@@ -11,11 +11,11 @@ The dataset we chose was video game sales. This dataset contains 11 columns: Ran
 ## Models
 #### Entity-Relation Diagram
 
-<img src="milestone 1-ER diagram.jpg" tag="ER-Diagram">
+<img src="milestone 1-ER diagram.jpg" tag="ER-Diagram" alt="ER-Diagram">
 
 #### Relational-Model Diagram
 
-<img src="milestone 1-RM diagram.jpg">
+<img src="milestone 1-RM diagram.jpg" alt="RM-Diagram">
 
 
 ## Tables
