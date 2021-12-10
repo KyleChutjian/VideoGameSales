@@ -37,7 +37,6 @@ def query():
         ORDER BY global_sales DESC;
     ''', cnx)
     fig = px.bar(df, title='Sales By Game', x='Game Name', y=['na_sales', 'eu_sales', 'jp_sales', 'other_sales'])
-
     fig.show()
 
     # Pie Chart of Publishers
